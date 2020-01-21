@@ -1,0 +1,13 @@
+node_modules/
+build/
+dist/
+.DS_Store
+.node-*
+*.log
+state_*.json
+.env
+__pycache__
+*.pyc
+.idea/
+genkeys/
+*.deployed

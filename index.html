@@ -1,0 +1,161 @@
+<!doctype html>
+
+<html>
+
+  </head>
+    <title>Loopring Signature Example</title>
+  </head>
+
+  <body>
+    <h1>Loopring Signature Snap Example!</h1>
+    <details>
+      <summary>Instructions</summary>
+      <ul>
+        <li>First, click "Connect". Then, try out the other buttons!</li>
+        <li>Please note that:</li>
+        <ul>
+          <li>
+            The Snap <b>package.json</b> must be located in located in the server root directory
+          </li>
+          <li>
+            The Snap bundle must be hosted at the location specified by <b>package.json:web3Wallet:bundle:url</b>
+          </li>
+        </ul>
+      </ul>
+    </details>
+    <br/>
+
+    <button class="connect">Connect</button>
+    <button class="account">Get Public Key</button>
+
+    <br>
+
+    Ethereum address: <input class="address" size="42" disabled></textarea> <br>
+
+    <br>
+
+    Exchange ID: <input class="exchange_id"  value="3" /> <br>
+    Order ID: <input class="order_id"  value="0" /> <br>
+    Account ID: <input class="account_id"  value="0" /> <br>
+    TokenS: <input class="token_s"  value="0" /> <br>
+    TokenB: <input class="token_b"  value="2" /> <br>
+    AmountS: <input class="amount_s"  value="1000000000000000000" /> <br>
+    AmountB: <input class="amount_b"  value="10000000000000000000" /> <br>
+    AllorNone: <input class="all_or_none"  value="0" /> <br>
+    ValidSince: <input class="valid_since"  value="1" /> <br>
+    ValidUntil: <input class="valid_until"  value="4294967295" /> <br>
+    MaxFee (bips): <input class="max_fee_bips"  value="50" /> <br>
+    Buy: <input class="buy"  value="1" /> <br>
+    Label: <input class="label"  value="123" /> <br>
+
+    <button class="sign">Sign Data</button> <br>
+    Signature: <br>
+    <textarea class="signature" rows="3" cols="96"></textarea> <br>
+
+  </body>
+
+  <script>
+
+    const snapId = new URL('package.json', window.location.href).toString()
+
+    const connectButton = document.querySelector('button.connect')
+    const accountButton = document.querySelector('button.account')
+    const signButton = document.querySelector('button.sign')
+
+    connectButton.addEventListener('click', connect)
+    signButton.addEventListener('click', signMessage)
+    accountButton.addEventListener('click', getPublicKey)
+
+    let currentAccount = null
+    ethereum.send('eth_accounts')
+      .then(handleAccountsChanged)
+      .catch(err => {
+        // In the future, maybe in 2020, this will return a 4100 error if
+        // the user has yet to connect
+        if (err.code === 4100) { // EIP 1193 unauthorized error
+          console.log('Please connect to MetaMask.')
+        } else {
+          console.error(err)
+        }
+      })
+
+    // Note that this event is emitted on page load.
+    // If the array of accounts is non-empty, you're already
+    // connected.
+    ethereum.on('accountsChanged', handleAccountsChanged)
+    // For now, 'eth_accounts' will continue to always return an array
+    function handleAccountsChanged (accounts) {
+      if (accounts.length === 0) {
+        // MetaMask is locked or the user has not connected any accounts
+        console.log('Please connect to MetaMask.')
+      } else if (accounts[0] !== currentAccount) {
+        currentAccount = accounts[0];
+        document.querySelector('.address').value = currentAccount;
+      }
+    }
+
+    async function connect () {
+      await ethereum.send({
+        method: 'wallet_enable',
+        params: [{
+          wallet_plugin: { [snapId]: {} },
+        }]
+      })
+      const accounts = await ethereum.send('eth_requestAccounts');
+      currentAccount = accounts[0];
+      document.querySelector('.address').value = currentAccount;
+    }
+
+    async function getPublicKey () {
+      try {
+        const response = await ethereum.send({
+          method: 'wallet_invokePlugin',
+          params: [snapId, {
+            method: 'getPublicKey'
+          }]
+        })
+
+        alert('received back: ' + JSON.stringify(response))
+      } catch (err) {
+        console.error(err)
+        alert('Problem: ' + err.message || err)
+      }
+    }
+
+    async function signMessage () {
+      try {
+        const hash_settings = {t: 14, nRoundsF: 6, nRoundsP: 53};
+        const typed_inputs = [
+          {name: "Exchange", type: "number", value: document.querySelector('.exchange_id').value, display : "loopring.io"},
+          {name: "Account", type: "number", value: document.querySelector('.account_id').value, display: currentAccount},
+          {name: "Order ID", type: "number", value: document.querySelector('.order_id').value},
+          {name: "Selling Token", type: "number", value: document.querySelector('.token_s').value, display: "ETH"},
+          {name: "Buying Token", type: "number", value: document.querySelector('.token_b').value, display: "LRC"},
+          {name: "Selling Amount", type: "number", value: document.querySelector('.amount_s').value, decimals: "18"},
+          {name: "Buying Amount", type: "number", value: document.querySelector('.amount_b').value, decimals: "18"},
+          {name: "All or Nothing", type: "bool", value: document.querySelector('.all_or_none').value},
+          {name: "Valid From", type: "timestamp", value: document.querySelector('.valid_since').value},
+          {name: "Valid Until", type: "timestamp", value: document.querySelector('.valid_until').value},
+          {name: "Max Fee", type: "bips", value: document.querySelector('.max_fee_bips').value},
+          {name: "Buy", type: "bool", value: document.querySelector('.buy').value},
+          {name: "Label", type: "number", value: document.querySelector('.label').value},
+        ];
+        const response = await ethereum.send({
+          method: 'wallet_invokePlugin',
+          params: [snapId, {
+            method: 'signMessage',
+            params: {hash_settings, typed_inputs}
+          }]
+        })
+
+        document.querySelector('.signature').value = JSON.stringify(response);
+        document.querySelector('.address').value = currentAccount;
+      } catch (err) {
+        console.error(err)
+        alert('Problem: ' + err.message || err)
+      }
+    }
+
+  </script>
+
+</html>
