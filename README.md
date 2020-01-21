@@ -6,7 +6,9 @@ A MetaMask plugin for signing EdDSA data. Currently only works in the [MetaMask 
 
 - [Install the MetaMask Snaps Beta](https://github.com/MetaMask/metamask-snaps-beta/wiki/Getting-Started)
 - Clone this repo
-- In the root folder of this repo, run `mm-snap build` and then `mm-snap serve`
+- Go to the root folder of this repo
+- Run `npm install`
+- Run `mm-snap build` and then `mm-snap serve`
 - Browse to `localhost:8084` in the browser you installed the MetaMask Beta in
 - Follow the intstructions given on the website
 
