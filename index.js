@@ -10,19 +10,20 @@ function toDate(UNIX_timestamp){
 }
 
 async function getActiveAccount(){
-  const accounts = await wallet.send('eth_requestAccounts');
+  const accounts = await wallet.request({
+    method: 'eth_requestAccounts'})
   return accounts[0];
 }
 
 wallet.registerRpcMessageHandler(async (_originString, requestObject) => {
   switch (requestObject.method) {
 
-    case 'getPublicKey':
+    case 'getAccount':
       return getPublicKey();
 
     case 'signMessage':
-      const typed_inputs = requestObject.params.typed_inputs;
-      const hash_settings = requestObject.params.hash_settings;
+      const typed_inputs = requestObject.params[1];
+      const hash_settings = requestObject.params[0];
       const {inputs, strDisplay} = processTypedInputs(typed_inputs);
       const account = await getActiveAccount();
       const approved = await promptUser("Signing data for " + account + ":\n" + strDisplay);
@@ -38,9 +39,16 @@ wallet.registerRpcMessageHandler(async (_originString, requestObject) => {
   }
 })
 
+async function getAppKey() {
+  const appKey = await wallet.request({
+    method: 'snap_getAppKey',
+  });
+  return appKey;
+}
+
 async function getPrivateKey () {
   // Create a unique private key for each Ethereum address of the user
-  const appKey = await wallet.getAppKey();
+  const appKey = await getAppKey();
   const account = await getActiveAccount();
   const secret = createBlakeHash("blake512").update("" + appKey + account.slice(2)).digest().toString("hex");
   const privateKey = bigInt("0x" + secret, 16).mod(babyJub.subOrder).toString(10);
@@ -86,7 +94,10 @@ function signInputs(privateKey, settings, inputs) {
 }
 
 async function promptUser(message) {
-  const response = await wallet.send({ method: 'confirm', params: [message] });
+  const response = await wallet.request({
+    method: 'snap_confirm',
+    params: [message],
+  });
   return response;
 }
 
