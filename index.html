@@ -67,54 +67,28 @@
     accountButton.addEventListener('click', getPublicKey)
 
     let currentAccount = null
-    ethereum.send('eth_accounts')
-      .then(handleAccountsChanged)
-      .catch(err => {
-        // In the future, maybe in 2020, this will return a 4100 error if
-        // the user has yet to connect
-        if (err.code === 4100) { // EIP 1193 unauthorized error
-          console.log('Please connect to MetaMask.')
-        } else {
-          console.error(err)
-        }
-      })
-
-    // Note that this event is emitted on page load.
-    // If the array of accounts is non-empty, you're already
-    // connected.
-    ethereum.on('accountsChanged', handleAccountsChanged)
-    // For now, 'eth_accounts' will continue to always return an array
-    function handleAccountsChanged (accounts) {
-      if (accounts.length === 0) {
-        // MetaMask is locked or the user has not connected any accounts
-        console.log('Please connect to MetaMask.')
-      } else if (accounts[0] !== currentAccount) {
-        currentAccount = accounts[0];
-        document.querySelector('.address').value = currentAccount;
-      }
-    }
 
     async function connect () {
-      await ethereum.send({
+      await ethereum.request({
         method: 'wallet_enable',
         params: [{
-          wallet_plugin: { [snapId]: {} },
+          wallet_snap: { [snapId]: {} },
         }]
       })
-      const accounts = await ethereum.send('eth_requestAccounts');
+      const accounts = await ethereum.request({
+              method: 'eth_requestAccounts'})
       currentAccount = accounts[0];
       document.querySelector('.address').value = currentAccount;
     }
 
     async function getPublicKey () {
       try {
-        const response = await ethereum.send({
-          method: 'wallet_invokePlugin',
+        const response = await ethereum.request({
+          method: 'wallet_invokeSnap',
           params: [snapId, {
-            method: 'getPublicKey'
+            method: 'getAccount'
           }]
         })
-
         alert('received back: ' + JSON.stringify(response))
       } catch (err) {
         console.error(err)
@@ -140,11 +114,12 @@
           {name: "Buy", type: "bool", value: document.querySelector('.buy').value},
           {name: "Label", type: "number", value: document.querySelector('.label').value},
         ];
-        const response = await ethereum.send({
-          method: 'wallet_invokePlugin',
+        
+        const response = await ethereum.request({
+          method: 'wallet_invokeSnap',
           params: [snapId, {
             method: 'signMessage',
-            params: {hash_settings, typed_inputs}
+            params: [hash_settings, typed_inputs]
           }]
         })
 

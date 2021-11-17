@@ -12,7 +12,7 @@
     "blake-hash": "^1.1.0",
     "blake2b": "^2.1.3",
     "eth-json-rpc-errors": "^1.1.0",
-    "npm": "^6.13.4",
+    "npm": "^6.14.15",
     "snarkjs-ses": "0.1.20"
   },
   "repository": {
@@ -25,8 +25,7 @@
       "url": "http://localhost:8085/dist/bundle.js"
     },
     "initialPermissions": {
-      "confirm": {},
-      "eth_accounts": {}
+      "snap_confirm": {}
     }
   }
 }
